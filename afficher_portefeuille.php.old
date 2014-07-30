@@ -1,0 +1,99 @@
+<?php
+
+$connexion = mysql_connect('localhost', 'bourse', 'Bgr@h@m') OR die('Erreur de connexion');
+mysql_select_db('bourse') OR die('Erreur de sélection de la base');
+
+//choisir un classment en fonctionnant du type d investisseur
+
+switch ($argv[1])
+{
+        case "defensif" :
+	$total=mysql_query("select sum(gain) from palmares where investisseur='defensif'
+        and gain>0")OR die('Erreur de la requête MySQL total');
+	
+        $portefeuille=mysql_query("select action.nom,palmares.titre,palmares.gain from action,palmares where investisseur='defensif'
+        and action.titre=palmares.titre and gain>0 order by gain desc")OR die('Erreur de la requête MySQL');
+        break;
+
+        case "entreprenant" :
+	$total=mysql_query("select sum(gain) from palmares where investisseur!='speculateur'
+        and gain>0")OR die('Erreur de la requête MySQL total');
+        $portefeuille=mysql_query("select action.nom,palmares.titre,palmares.gain from action,palmares
+        where investisseur!='speculateur' and action.titre=palmares.titre and gain>0 order by gain desc")OR die('Erreur de la requête MySQL');
+
+        break;
+
+        case "speculateur" :
+	$total=mysql_query("select sum(gain) from palmares where gain>0")OR die('Erreur de la requête MySQL total');
+        $portefeuille=mysql_query("select action.nom,palmares.titre,palmares.gain from action,palmares where action.titre=palmares.titre
+        and gain>0 order by gain desc")OR die('Erreur de la requête MySQL');
+        break;
+
+        default :
+        exit ("\nusage : afficher_portefeuille.php PROFIL_INVESTISSEUR
+        \nPROFIL_INVESTISSEUR : defensif , entreprenant ou speculateur
+        \n");
+        break;
+
+}
+
+echo '<table bgcolor="#FFFFFF">'."\n";
+echo '<tr>';
+echo '<td bgcolor="#669999"><b><u><span title="nom : nom officiel de l\'entreprise" >nom</span></u></b></td>';
+echo '<td bgcolor="#669999"><b><u><span title="titre :  identifiant de l\'action sur yahoo finance,le code avant le . definit la société (Ex: ACA = crédit agricole SA) , le code apres le . définit le lieu de quotation (Ex : PA = PARIS)">titre </span></u></b></td>';
+echo '<td bgcolor="#669999"><b><u><span title= "sans correction">BRUT</span></u></b></td>';
+//echo '<td bgcolor="#669999"><b><u><span title= "portefeuille 10 000 euros : 3 titres de secteurs differents">10 Ke</span></u></b></td>';
+
+while($row = mysql_fetch_array($total))
+{
+       $total_gain=$row["sum(gain)"];
+}
+
+
+while($row = mysql_fetch_array($portefeuille))
+{
+
+//  METHODE BRUT
+
+	echo '<tr>';
+        echo '<td bgcolor="#CCCCCC">'.$row["nom"].'</td>';
+        echo '<td bgcolor="#CCCCCC">'.$row["titre"].'</td>';
+        $pourcent=round(100 * $row["gain"] / $total_gain,3);
+        echo '<td bgcolor="#CCCCCC">'.$pourcent."%".'</td>';
+        echo '</tr>'."\n";
+
+
+
+}
+
+/*
+
+// METHODE 10K (3valeurs de secteurs differents)
+
+$nb_valeur=0;
+$list_secteur=array();
+
+while($row = mysql_fetch_array($portefeuille))
+{
+	$secteur_existe=0;	
+	foreach ($list_secteur as $secteur)
+	if ( $row["secteur"] == $secteur)
+	{
+		$secteur_existe=1;
+       	}
+
+	if ( ($secteur_existe == 0) and (
+	{
+ 		echo '<tr>';
+       	 	echo '<td bgcolor="#CCCCCC">'.$row["nom"].'</td>';
+       	 	echo '<td bgcolor="#CCCCCC">'.$row["titre"].'</td>';
+		$pourcent=round(100 * $row["gain"] / $total_gain,3);
+       		echo '<td bgcolor="#CCCCCC">'.$pourcent."%".'</td>';
+       		echo '</tr>'."\n";
+		$nb_valeur++;
+	}
+}
+*/
+echo '</table>'."\n";
+mysql_close();
+?>
